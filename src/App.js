@@ -1,24 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from 'react';
+import { ApolloClient, HttpLink, ApolloLink, InMemoryCache, from } from 'apollo-boost';
+import { ApolloProvider } from "react-apollo";
+import Browser from './components/Browser';
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const httpLink = new HttpLink({ uri: "http://localhost:8081/graphiql" });
+
+const authMiddleware = new ApolloLink((operation, forward) => {
+  operation.setContext(({ headers = {} }) => ({
+    headers: {
+      ...headers,
+      Authorization: localStorage.getItem('token') || null,
+    }
+  }));
+
+  return forward(operation);
+})
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: from([
+    authMiddleware,
+    httpLink
+  ]),
+});
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ApolloProvider client={client}>
+      <Browser />
+    </ApolloProvider>
   );
 }
 
